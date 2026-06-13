@@ -1,3 +1,8 @@
+import { fileURLToPath } from 'node:url'
+
+export const isAlreadyCheckedInMessage = (message = '') =>
+  String(message).includes("Today's observation logged")
+
 const glados = async () => {
   const notice = []
   const errors = []
@@ -24,7 +29,9 @@ const glados = async () => {
         headers: { ...common, 'content-type': 'application/json' },
         body: '{"token":"glados.one"}',
       }).then((r) => r.json())
-      if (action?.code) throw new Error(action?.message)
+      if (action?.code && !isAlreadyCheckedInMessage(action?.message)) {
+        throw new Error(action?.message)
+      }
       const status = await fetch('https://glados.rocks/api/user/status', {
         method: 'GET',
         headers: { ...common },
@@ -126,4 +133,6 @@ const main = async () => {
   }
 }
 
-main()
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  main()
+}
