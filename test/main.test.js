@@ -32,3 +32,13 @@ test('exits with failure when a configured check-in fails', async () => {
   assert.equal(result.code, 1)
   assert.match(result.stdout, /Checkin Error/)
 })
+
+test('prints a safe failure reason even without console notification', async () => {
+  const result = await runMain({
+    GLADOS: 'invalid-cookie',
+    NOTIFY: '',
+  })
+
+  assert.equal(result.code, 1)
+  assert.match(result.stderr, /Checkin failure: Error: /)
+})

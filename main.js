@@ -1,10 +1,12 @@
 const glados = async () => {
   const notice = []
+  const errors = []
   let failures = 0
   let successes = 0
   if (!process.env.GLADOS) {
     return {
       notice: ['Checkin Error', 'GLADOS secret is not configured'],
+      errors: ['GLADOS secret is not configured'],
       failures: 1,
       successes: 0,
     }
@@ -35,15 +37,17 @@ const glados = async () => {
       )
       successes += 1
     } catch (error) {
+      const message = `${error}`
       failures += 1
+      errors.push(message)
       notice.push(
         'Checkin Error',
-        `${error}`,
+        message,
         `<${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}>`
       )
     }
   }
-  return { notice, failures, successes }
+  return { notice, errors, failures, successes }
 }
 
 const notify = async (notice) => {
@@ -115,6 +119,9 @@ const main = async () => {
   await notify(result.notice)
   console.log(`Checkin finished: ${result.successes} success, ${result.failures} failed`)
   if (result.failures > 0) {
+    for (const error of result.errors) {
+      console.error(`Checkin failure: ${error}`)
+    }
     process.exitCode = 1
   }
 }
