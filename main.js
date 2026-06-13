@@ -1,6 +1,14 @@
 const glados = async () => {
   const notice = []
-  if (!process.env.GLADOS) return
+  let failures = 0
+  let successes = 0
+  if (!process.env.GLADOS) {
+    return {
+      notice: ['Checkin Error', 'GLADOS secret is not configured'],
+      failures: 1,
+      successes: 0,
+    }
+  }
   for (const cookie of String(process.env.GLADOS).split('\n')) {
     if (!cookie) continue
     try {
@@ -25,7 +33,9 @@ const glados = async () => {
         `${action?.message}`,
         `Left Days ${Number(status?.data?.leftDays)}`
       )
+      successes += 1
     } catch (error) {
+      failures += 1
       notice.push(
         'Checkin Error',
         `${error}`,
@@ -33,7 +43,7 @@ const glados = async () => {
       )
     }
   }
-  return notice
+  return { notice, failures, successes }
 }
 
 const notify = async (notice) => {
@@ -101,7 +111,12 @@ const notify = async (notice) => {
 }
 
 const main = async () => {
-  await notify(await glados())
+  const result = await glados()
+  await notify(result.notice)
+  console.log(`Checkin finished: ${result.successes} success, ${result.failures} failed`)
+  if (result.failures > 0) {
+    process.exitCode = 1
+  }
 }
 
 main()
