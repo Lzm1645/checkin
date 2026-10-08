@@ -1,10 +1,11 @@
 name: run
 
+# GLaDOS 的 API 在 2026-11 起对 GitHub Actions（Azure 数据中心 IP）返回
+# Cloudflare Turnstile 校验失败，从本机住宅 IP 请求则正常。定时签到改到本机
+# launchd 执行（见 scripts/local-checkin.sh），工作流只保留手动触发。
 on:
   workflow_dispatch:
   push:
-  schedule:
-    - cron: 10 16 * * *
 
 jobs:
   run:
