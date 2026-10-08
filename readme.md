@@ -8,9 +8,11 @@ GitHub Actions 实现 [GLaDOS][glados] 自动签到
 
 1. Fork 这个仓库
 
-1. 登录 [GLaDOS][glados] 获取 Cookie
+1. 登录 [GLaDOS][glados]，从浏览器开发者工具的 Network 请求中复制完整 Cookie。Cookie 必须包含 `gld:sess` 和 `gld:sess.sig`
 
 1. 添加 Cookie 到 Secret `GLADOS`
+
+1. 从同一个登录浏览器复制完整 User-Agent。Edge 可在 `edge://version` 查看，然后添加到 Actions Variable `GLADOS_USER_AGENT`
 
 1. 启用 Actions, 每天北京时间 00:10 自动签到
 
@@ -28,10 +30,11 @@ GitHub Actions 实现 [GLaDOS][glados] 自动签到
 
 1. 注意: Cookie 以及接口输出数据, 包含帐号敏感信息, 因此不要随意公开
 
+1. GLaDOS 会校验 Cookie 对应的登录设备。浏览器升级或重新登录后，如果出现 `device-mismatch`，请同时更新 `GLADOS` 和 `GLADOS_USER_AGENT`
+
 ---
 
 [glados]: https://github.com/glados-network/GLaDOS
 [crontab]: https://crontab.guru/
 [pushplus]: https://www.pushplus.plus/
 [wxpusher]: https://wxpusher.zjiecode.com/
-

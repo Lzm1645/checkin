@@ -1,7 +1,25 @@
 import { fileURLToPath } from 'node:url'
 
+const GLADOS_ORIGIN = 'https://glados.rocks'
+const GLADOS_HOSTNAME = new URL(GLADOS_ORIGIN).hostname
+
 export const isAlreadyCheckedInMessage = (message = '') =>
   String(message).includes("Today's observation logged")
+
+export const buildBrowserHeaders = (userAgent = '') => ({
+  accept: 'application/json, text/plain, */*',
+  origin: GLADOS_ORIGIN,
+  'user-agent': String(userAgent).trim(),
+})
+
+export const describeCheckinError = (result = {}) => {
+  const message = result?.message || 'Unknown GLaDOS check-in error'
+  const details = ['reason', 'loginDevice', 'currentDevice']
+    .filter((key) => result?.[key])
+    .map((key) => `${key}=${result[key]}`)
+
+  return details.length ? `${message} (${details.join(', ')})` : message
+}
 
 const glados = async () => {
   const notice = []
@@ -16,27 +34,40 @@ const glados = async () => {
       successes: 0,
     }
   }
+  const userAgent = String(process.env.GLADOS_USER_AGENT || '').trim()
+  if (!userAgent) {
+    return {
+      notice: [
+        'Checkin Error',
+        'GLADOS_USER_AGENT is not configured; it must match the browser that created the cookie',
+      ],
+      errors: [
+        'GLADOS_USER_AGENT is not configured; it must match the browser that created the cookie',
+      ],
+      failures: 1,
+      successes: 0,
+    }
+  }
   for (const cookie of String(process.env.GLADOS).split('\n')) {
     if (!cookie) continue
     try {
       const common = {
-        'cookie': cookie,
-        'referer': 'https://glados.rocks/console/checkin',
-        'user-agent': 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0)',
+        ...buildBrowserHeaders(userAgent),
+        cookie,
       }
-      const action = await fetch('https://glados.rocks/api/user/checkin', {
+      const action = await fetch(`${GLADOS_ORIGIN}/api/user/checkin`, {
         method: 'POST',
-        headers: { ...common, 'content-type': 'application/json' },
-        body: '{"token":"glados.one"}',
+        headers: { ...common, 'content-type': 'application/json;charset=UTF-8' },
+        body: JSON.stringify({ token: GLADOS_HOSTNAME }),
       }).then((r) => r.json())
       if (action?.code && !isAlreadyCheckedInMessage(action?.message)) {
-        throw new Error(action?.message)
+        throw new Error(describeCheckinError(action))
       }
-      const status = await fetch('https://glados.rocks/api/user/status', {
+      const status = await fetch(`${GLADOS_ORIGIN}/api/user/status`, {
         method: 'GET',
         headers: { ...common },
       }).then((r) => r.json())
-      if (status?.code) throw new Error(status?.message)
+      if (status?.code) throw new Error(describeCheckinError(status))
       notice.push(
         'Checkin OK',
         `${action?.message}`,
