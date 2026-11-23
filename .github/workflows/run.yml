@@ -5,7 +5,6 @@ name: run
 # launchd 执行（见 scripts/local-checkin.sh），工作流只保留手动触发。
 on:
   workflow_dispatch:
-  push:
 
 jobs:
   run:
